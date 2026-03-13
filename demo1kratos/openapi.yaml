@@ -1,0 +1,174 @@
+# Generated with protoc-gen-openapi
+# https://github.com/google/gnostic/tree/master/cmd/protoc-gen-openapi
+
+openapi: 3.0.3
+info:
+    title: StudentService API
+    version: 0.0.1
+paths:
+    /students:
+        get:
+            tags:
+                - StudentService
+            operationId: StudentService_ListStudents
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/student.ListStudentsReply'
+        post:
+            tags:
+                - StudentService
+            operationId: StudentService_CreateStudent
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/student.CreateStudentRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/student.CreateStudentReply'
+    /students/{id}:
+        get:
+            tags:
+                - StudentService
+            operationId: StudentService_GetStudent
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/student.GetStudentReply'
+        put:
+            tags:
+                - StudentService
+            operationId: StudentService_UpdateStudent
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/student.UpdateStudentRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/student.UpdateStudentReply'
+        delete:
+            tags:
+                - StudentService
+            operationId: StudentService_DeleteStudent
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/student.DeleteStudentReply'
+components:
+    schemas:
+        student.CreateStudentReply:
+            type: object
+            properties:
+                student:
+                    $ref: '#/components/schemas/student.StudentInfo'
+        student.CreateStudentRequest:
+            type: object
+            properties:
+                name:
+                    type: string
+                age:
+                    type: integer
+                    format: int32
+                className:
+                    type: string
+        student.DeleteStudentReply:
+            type: object
+            properties:
+                success:
+                    type: boolean
+        student.GetStudentReply:
+            type: object
+            properties:
+                student:
+                    $ref: '#/components/schemas/student.StudentInfo'
+        student.ListStudentsReply:
+            type: object
+            properties:
+                students:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/student.StudentInfo'
+                count:
+                    type: integer
+                    format: int32
+        student.StudentInfo:
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                age:
+                    type: integer
+                    format: int32
+                className:
+                    type: string
+        student.UpdateStudentReply:
+            type: object
+            properties:
+                student:
+                    $ref: '#/components/schemas/student.StudentInfo'
+        student.UpdateStudentRequest:
+            type: object
+            properties:
+                id:
+                    type: string
+                name:
+                    type: string
+                age:
+                    type: integer
+                    format: int32
+                className:
+                    type: string
+tags:
+    - name: StudentService

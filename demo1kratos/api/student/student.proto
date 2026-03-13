@@ -1,0 +1,95 @@
+syntax = "proto3";
+
+package student;
+
+import "google/api/annotations.proto";
+
+option go_package = "demo1kratos/api/student;student";
+
+service StudentService {
+  rpc CreateStudent(CreateStudentRequest) returns (CreateStudentReply) {
+    option (google.api.http) = {
+      post: "/students"
+      body: "*"
+    };
+  }
+
+  rpc UpdateStudent(UpdateStudentRequest) returns (UpdateStudentReply) {
+    option (google.api.http) = {
+      put: "/students/{id}"
+      body: "*"
+    };
+  }
+
+  rpc DeleteStudent(DeleteStudentRequest) returns (DeleteStudentReply) {
+    option (google.api.http) = {
+      delete: "/students/{id}"
+    };
+  }
+
+  rpc GetStudent(GetStudentRequest) returns (GetStudentReply) {
+    option (google.api.http) = {
+      get: "/students/{id}"
+    };
+  }
+
+  rpc ListStudents(ListStudentsRequest) returns (ListStudentsReply) {
+    option (google.api.http) = {
+      get: "/students"
+    };
+  }
+}
+
+message StudentInfo {
+  int64 id = 1;
+  string name = 2;
+  int32 age = 3;
+  string class_name = 4;
+}
+
+message CreateStudentRequest {
+  string name = 1;
+  int32 age = 2;
+  string class_name = 3;
+}
+
+message CreateStudentReply {
+  StudentInfo student = 1;
+}
+
+message UpdateStudentRequest {
+  int64 id = 1;
+  string name = 2;
+  int32 age = 3;
+  string class_name = 4;
+}
+
+message UpdateStudentReply {
+  StudentInfo student = 1;
+}
+
+message DeleteStudentRequest {
+  int64 id = 1;
+}
+
+message DeleteStudentReply {
+  bool success = 1;
+}
+
+message GetStudentRequest {
+  int64 id = 1;
+}
+
+message GetStudentReply {
+  StudentInfo student = 1;
+}
+
+message ListStudentsRequest {
+  int32 page = 1;
+  int32 page_size = 2;
+}
+
+message ListStudentsReply {
+  repeated StudentInfo students = 1;
+  int32 count = 2;
+}

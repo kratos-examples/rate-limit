@@ -1,0 +1,171 @@
+# Generated with protoc-gen-openapi
+# https://github.com/google/gnostic/tree/master/cmd/protoc-gen-openapi
+
+openapi: 3.0.3
+info:
+    title: ArticleService API
+    version: 0.0.1
+paths:
+    /articles:
+        get:
+            tags:
+                - ArticleService
+            operationId: ArticleService_ListArticles
+            parameters:
+                - name: page
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+                - name: pageSize
+                  in: query
+                  schema:
+                    type: integer
+                    format: int32
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/article.ListArticlesReply'
+        post:
+            tags:
+                - ArticleService
+            operationId: ArticleService_CreateArticle
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/article.CreateArticleRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/article.CreateArticleReply'
+    /articles/{id}:
+        get:
+            tags:
+                - ArticleService
+            operationId: ArticleService_GetArticle
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/article.GetArticleReply'
+        put:
+            tags:
+                - ArticleService
+            operationId: ArticleService_UpdateArticle
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/article.UpdateArticleRequest'
+                required: true
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/article.UpdateArticleReply'
+        delete:
+            tags:
+                - ArticleService
+            operationId: ArticleService_DeleteArticle
+            parameters:
+                - name: id
+                  in: path
+                  required: true
+                  schema:
+                    type: string
+            responses:
+                "200":
+                    description: OK
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/article.DeleteArticleReply'
+components:
+    schemas:
+        article.ArticleInfo:
+            type: object
+            properties:
+                id:
+                    type: string
+                title:
+                    type: string
+                content:
+                    type: string
+                studentId:
+                    type: string
+        article.CreateArticleReply:
+            type: object
+            properties:
+                article:
+                    $ref: '#/components/schemas/article.ArticleInfo'
+        article.CreateArticleRequest:
+            type: object
+            properties:
+                title:
+                    type: string
+                content:
+                    type: string
+                studentId:
+                    type: string
+        article.DeleteArticleReply:
+            type: object
+            properties:
+                success:
+                    type: boolean
+        article.GetArticleReply:
+            type: object
+            properties:
+                article:
+                    $ref: '#/components/schemas/article.ArticleInfo'
+        article.ListArticlesReply:
+            type: object
+            properties:
+                articles:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/article.ArticleInfo'
+                count:
+                    type: integer
+                    format: int32
+        article.UpdateArticleReply:
+            type: object
+            properties:
+                article:
+                    $ref: '#/components/schemas/article.ArticleInfo'
+        article.UpdateArticleRequest:
+            type: object
+            properties:
+                id:
+                    type: string
+                title:
+                    type: string
+                content:
+                    type: string
+                studentId:
+                    type: string
+tags:
+    - name: ArticleService

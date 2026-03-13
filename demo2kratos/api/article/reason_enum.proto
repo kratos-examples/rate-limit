@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package article;
+
+import "errors/errors.proto";
+
+option go_package = "demo2kratos/api/article;article";
+
+enum ErrorReason {
+  option (errors.default_code) = 500;
+
+  UNKNOWN = 0 [(errors.code) = 500];
+
+  BAD_PARAM = 40000 [(errors.code) = 400];
+
+  ARTICLE_NOT_FOUND = 40400 [(errors.code) = 404];
+
+  SERVER_ERROR = 50000 [(errors.code) = 500];
+  DB_ERROR = 50001 [(errors.code) = 500];
+  TX_ERROR = 50002 [(errors.code) = 500];
+  ARTICLE_CREATE_FAILURE = 50003 [(errors.code) = 500];
+}

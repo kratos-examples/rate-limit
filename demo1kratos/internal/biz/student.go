@@ -8,6 +8,7 @@ import (
 	"github.com/yylego/kratos-ebz/ebzkratos"
 	pb "github.com/yylego/kratos-examples/demo1kratos/api/student"
 	"github.com/yylego/kratos-examples/demo1kratos/internal/data"
+	"github.com/yylego/must"
 )
 
 type Student struct {
@@ -27,6 +28,8 @@ func NewStudentUsecase(data *data.Data, logger log.Logger) *StudentUsecase {
 }
 
 func (uc *StudentUsecase) CreateStudent(ctx context.Context, s *Student) (*Student, *ebzkratos.Ebz) {
+	must.Nice(s.Name)
+
 	var res Student
 	if err := gofakeit.Struct(&res); err != nil {
 		return nil, ebzkratos.New(pb.ErrorStudentCreateFailure("fake: %v", err))
@@ -35,6 +38,9 @@ func (uc *StudentUsecase) CreateStudent(ctx context.Context, s *Student) (*Stude
 }
 
 func (uc *StudentUsecase) UpdateStudent(ctx context.Context, s *Student) (*Student, *ebzkratos.Ebz) {
+	must.True(s.ID > 0)
+	must.Nice(s.Name)
+
 	var res Student
 	if err := gofakeit.Struct(&res); err != nil {
 		return nil, ebzkratos.New(pb.ErrorServerError("fake: %v", err))
@@ -43,10 +49,14 @@ func (uc *StudentUsecase) UpdateStudent(ctx context.Context, s *Student) (*Stude
 }
 
 func (uc *StudentUsecase) DeleteStudent(ctx context.Context, id int64) *ebzkratos.Ebz {
+	must.True(id > 0)
+
 	return nil
 }
 
 func (uc *StudentUsecase) GetStudent(ctx context.Context, id int64) (*Student, *ebzkratos.Ebz) {
+	must.True(id > 0)
+
 	var res Student
 	if err := gofakeit.Struct(&res); err != nil {
 		return nil, ebzkratos.New(pb.ErrorServerError("fake: %v", err))

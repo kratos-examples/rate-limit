@@ -1,18 +1,32 @@
 package server
 
 import (
+	"context"
+	"time"
+
 	"github.com/go-kratos/kratos/v2/log"
+	"github.com/go-kratos/kratos/v2/middleware"
 	"github.com/go-kratos/kratos/v2/middleware/recovery"
 	"github.com/go-kratos/kratos/v2/transport/grpc"
+	"github.com/go-redis/redis_rate/v10"
+	"github.com/yylego/kratos-auth/authkratos"
 	pb "github.com/yylego/kratos-examples/demo2kratos/api/article"
 	"github.com/yylego/kratos-examples/demo2kratos/internal/conf"
+	"github.com/yylego/kratos-examples/demo2kratos/internal/data"
 	"github.com/yylego/kratos-examples/demo2kratos/internal/service"
+	"github.com/yylego/kratos-rate-limit/ratekratoslimits"
 )
 
-func NewGRPCServer(c *conf.Server, article *service.ArticleService, logger log.Logger) *grpc.Server {
+func NewGRPCServer(
+	c *conf.Server,
+	dataData *data.Data,
+	article *service.ArticleService,
+	logger log.Logger,
+) *grpc.Server {
 	var opts = []grpc.ServerOption{
 		grpc.Middleware(
 			recovery.Recovery(),
+			NewGRPCRateLimitMiddleware(dataData, logger), // Redis-backed rate limiting // 基于 Redis 的限流中间件
 		),
 	}
 	if c.Grpc.Network != "" {
@@ -27,4 +41,28 @@ func NewGRPCServer(c *conf.Server, article *service.ArticleService, logger log.L
 	srv := grpc.NewServer(opts...)
 	pb.RegisterArticleServiceServer(srv, article)
 	return srv
+}
+
+// NewGRPCRateLimitMiddleware creates rate limiting middleware for gRPC transport
+//
+// NewGRPCRateLimitMiddleware 创建 gRPC 传输层的限流中间件
+func NewGRPCRateLimitMiddleware(dataData *data.Data, logger log.Logger) middleware.Middleware {
+	routeScope := authkratos.NewInclude(
+		pb.OperationArticleServiceCreateArticle,
+		pb.OperationArticleServiceUpdateArticle,
+		pb.OperationArticleServiceDeleteArticle,
+		pb.OperationArticleServiceGetArticle,
+		pb.OperationArticleServiceListArticles,
+	)
+	redisLimit := redis_rate.Limit{
+		Rate:   10,
+		Burst:  20,
+		Period: time.Minute,
+	}
+	keyFromCtx := func(ctx context.Context) (string, bool) {
+		return "demo-rate-limit-key", true
+	}
+	cfg := ratekratoslimits.NewConfig(routeScope, dataData.RateLimiter(), &redisLimit, keyFromCtx).
+		WithDebugMode(true)
+	return ratekratoslimits.NewMiddleware(cfg, logger)
 }

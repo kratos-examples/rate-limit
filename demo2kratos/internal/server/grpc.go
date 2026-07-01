@@ -2,12 +2,12 @@ package server
 
 import (
 	"context"
+	"log/slog"
 	"time"
 
-	"github.com/go-kratos/kratos/v2/log"
-	"github.com/go-kratos/kratos/v2/middleware"
-	"github.com/go-kratos/kratos/v2/middleware/recovery"
-	"github.com/go-kratos/kratos/v2/transport/grpc"
+	"github.com/go-kratos/kratos/v3/middleware"
+	"github.com/go-kratos/kratos/v3/middleware/recovery"
+	"github.com/go-kratos/kratos/v3/transport/grpc"
 	"github.com/go-redis/redis_rate/v10"
 	"github.com/yylego/kratos-auth/authkratos"
 	pb "github.com/yylego/kratos-examples/demo2kratos/api/article"
@@ -21,7 +21,7 @@ func NewGRPCServer(
 	c *conf.Server,
 	dataData *data.Data,
 	article *service.ArticleService,
-	logger log.Logger,
+	logger *slog.Logger,
 ) *grpc.Server {
 	var opts = []grpc.ServerOption{
 		grpc.Middleware(
@@ -46,7 +46,7 @@ func NewGRPCServer(
 // NewGRPCRateLimitMiddleware creates rate limiting middleware for gRPC transport
 //
 // NewGRPCRateLimitMiddleware 创建 gRPC 传输层的限流中间件
-func NewGRPCRateLimitMiddleware(dataData *data.Data, logger log.Logger) middleware.Middleware {
+func NewGRPCRateLimitMiddleware(dataData *data.Data, logger *slog.Logger) middleware.Middleware {
 	routeScope := authkratos.NewInclude(
 		pb.OperationArticleServiceCreateArticle,
 		pb.OperationArticleServiceUpdateArticle,

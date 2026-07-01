@@ -5,12 +5,12 @@ package server
 
 import (
 	"context"
+	"log/slog"
 	"time"
 
-	"github.com/go-kratos/kratos/v2/log"
-	"github.com/go-kratos/kratos/v2/middleware"
-	"github.com/go-kratos/kratos/v2/middleware/recovery"
-	"github.com/go-kratos/kratos/v2/transport/http"
+	"github.com/go-kratos/kratos/v3/middleware"
+	"github.com/go-kratos/kratos/v3/middleware/recovery"
+	"github.com/go-kratos/kratos/v3/transport/http"
 	"github.com/go-redis/redis_rate/v10"
 	"github.com/yylego/kratos-auth/authkratos"
 	pb "github.com/yylego/kratos-examples/demo2kratos/api/article"
@@ -24,7 +24,7 @@ func NewHTTPServer(
 	c *conf.Server,
 	dataData *data.Data,
 	article *service.ArticleService,
-	logger log.Logger,
+	logger *slog.Logger,
 ) *http.Server {
 	var opts = []http.ServerOption{
 		http.Middleware(
@@ -51,7 +51,7 @@ func NewHTTPServer(
 //
 // NewRateLimitMiddleware 创建基于 Redis 的限流中间件
 // 对所有文章服务操作应用限流，按操作名称提取限流键
-func NewRateLimitMiddleware(dataData *data.Data, logger log.Logger) middleware.Middleware {
+func NewRateLimitMiddleware(dataData *data.Data, logger *slog.Logger) middleware.Middleware {
 	routeScope := authkratos.NewInclude( // Create INCLUDE mode route scope // 创建 INCLUDE 模式的路由范围
 		pb.OperationArticleServiceCreateArticle,
 		pb.OperationArticleServiceUpdateArticle,

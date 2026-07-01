@@ -1,8 +1,9 @@
 package data
 
 import (
+	"log/slog"
+
 	"github.com/alicebob/miniredis/v2"
-	"github.com/go-kratos/kratos/v2/log"
 	"github.com/go-redis/redis_rate/v10"
 	"github.com/google/wire"
 	"github.com/redis/go-redis/v9"
@@ -28,7 +29,7 @@ func (d *Data) RateLimiter() *redis_rate.Limiter {
 	return d.rateLimiter
 }
 
-func NewData(c *conf.Data, logger log.Logger) (*Data, func(), error) {
+func NewData(c *conf.Data, logger *slog.Logger) (*Data, func(), error) {
 	must.Same(c.Database.Driver, "sqlite3")
 	db := rese.P1(gorm.Open(sqlite.Open(c.Database.Source), &gorm.Config{}))
 
@@ -41,7 +42,7 @@ func NewData(c *conf.Data, logger log.Logger) (*Data, func(), error) {
 	rateLimiter := redis_rate.NewLimiter(rdb)
 
 	cleanup := func() {
-		log.NewHelper(logger).Info("closing the data resources")
+		logger.Info("closing the data resources")
 		_ = rese.P1(db.DB()).Close()
 		_ = rdb.Close()
 		miniRedis.Close()

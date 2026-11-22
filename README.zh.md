@@ -23,6 +23,41 @@
 
 <!-- TEMPLATE (ZH) CLOSE: LANGUAGE NAVIGATION -->
 
+## 限流演示
+
+这个分叉演示 [kratos-rate-limit](https://github.com/yylego/kratos-rate-limit) v0.0.3。每个服务使用独立的内存 miniredis；同一服务的五个 CRUD 操作在 HTTP 和 gRPC 之间共用固定键 `demo-rate-limit-key`：突发额度 20 次，每分钟补充 10 次，即每 6 秒恢复一次。这是演示用的共享额度，不是按用户或按路由计数。`ListStudentArticles` 不在限流范围内。重启服务会重置额度，两个进程之间不共享 miniredis；实际接入分布式或按用户限流时，应使用共享 Redis，并从上下文提取计数键。
+
+中间件按值传入 `redis_rate.Limit`，用 `WithExceedErk` 返回自定义的 `429 TOO_MANY_REQUESTS`，消息为 `slow down`。库自动附带以秒为单位的 `Retry-After` 响应头；调试日志由 slog 日志级别控制。接线差异见 [changes/demo1.md](changes/demo1.md) 和 [changes/demo2.md](changes/demo2.md)。
+
+先确保 `configs/config.yaml` 中的 PostgreSQL 可用，再从仓库根目录分别在两个终端运行：
+
+```bash
+cd demo1kratos && make all && make build && ./bin/demo1kratos -conf ./configs/config.yaml
+```
+
+```bash
+cd demo2kratos && make all && make build && ./bin/demo2kratos -conf ./configs/config.yaml
+```
+
+服务刚启动且没有其他请求时，对两个接口分别连续请求：
+
+```bash
+for endpoint in 'http://localhost:8001/students?page=1&page_size=1' 'http://localhost:8002/articles?page=1&page_size=1'; do
+  for n in $(seq 1 21); do
+    curl -s -o /dev/null -w '%{http_code}\n' "$endpoint"
+  done
+  curl -i "$endpoint"
+done
+```
+
+前 20 次返回 200，随后返回 429。整轮突发请求在一秒内完成时，最后的响应带有 `Retry-After: 6`；按最新响应头中的秒数等待，再请求同一接口，恢复为 200。demo2 被限流期间，范围外的接口仍能访问：
+
+```bash
+curl -i 'http://localhost:8002/students/1/articles?page=1&page_size=1'
+```
+
+此请求返回 200，结果为匹配的文章或空列表。Redis 故障时保留库默认的 503 响应。
+
 ## 给 AI 助手的说明
 
 > 如果你是 AI 编程助手，动手前先把这一段读完、读懂。

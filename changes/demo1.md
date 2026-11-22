@@ -73,10 +73,10 @@ Code differences compared to source project.
  }
 ```
 
-## internal/server/grpc.go (+38 -1)
+## internal/server/grpc.go (+41 -1)
 
 ```diff
-@@ -1,20 +1,33 @@
+@@ -1,20 +1,34 @@
  package server
  
  import (
@@ -84,6 +84,7 @@ Code differences compared to source project.
  	"log/slog"
 +	"time"
  
++	"github.com/go-kratos/kratos/v3/errors"
 +	"github.com/go-kratos/kratos/v3/middleware"
  	"github.com/go-kratos/kratos/v3/middleware/recovery"
  	"github.com/go-kratos/kratos/v3/middleware/validate"
@@ -111,7 +112,7 @@ Code differences compared to source project.
  			validate.Validator(validateRequiredFields),
  		),
  	}
-@@ -30,4 +43,28 @@
+@@ -30,4 +44,30 @@
  	srv := grpc.NewServer(opts...)
  	pb.RegisterStudentServiceServer(srv, student)
  	return srv
@@ -136,16 +137,18 @@ Code differences compared to source project.
 +	keyFromCtx := func(ctx context.Context) (string, bool) {
 +		return "demo-rate-limit-key", true
 +	}
-+	cfg := ratekratoslimits.NewConfig(routeScope, dataData.RateLimiter(), &redisLimit, keyFromCtx).
-+		WithDebugMode(true)
++	cfg := ratekratoslimits.NewConfig(routeScope, dataData.RateLimiter(), redisLimit, keyFromCtx).
++		WithExceedErk(func(ctx context.Context) *errors.Error {
++			return errors.New(429, "TOO_MANY_REQUESTS", "slow down")
++		})
 +	return ratekratoslimits.NewMiddleware(cfg, logger)
  }
 ```
 
-## internal/server/http.go (+46 -1)
+## internal/server/http.go (+49 -1)
 
 ```diff
-@@ -1,20 +1,36 @@
+@@ -1,20 +1,37 @@
 +// Package server provides HTTP and gRPC with Redis-backed rate limiting middleware
 +//
 +// Package server 提供带 Redis 限流中间件的 HTTP 和 gRPC 服务
@@ -156,6 +159,7 @@ Code differences compared to source project.
  	"log/slog"
 +	"time"
  
++	"github.com/go-kratos/kratos/v3/errors"
 +	"github.com/go-kratos/kratos/v3/middleware"
  	"github.com/go-kratos/kratos/v3/middleware/recovery"
  	"github.com/go-kratos/kratos/v3/middleware/validate"
@@ -183,17 +187,17 @@ Code differences compared to source project.
  			validate.Validator(validateRequiredFields),
  		),
  	}
-@@ -30,4 +46,33 @@
+@@ -30,4 +47,35 @@
  	srv := http.NewServer(opts...)
  	pb.RegisterStudentServiceHTTPServer(srv, student)
  	return srv
 +}
 +
 +// NewRateLimitMiddleware creates rate limiting middleware using Redis-backed limiter
-+// Applies rate limit to all student service operations with per-operation key extraction
++// Student CRUD operations share one quota with the gRPC transport
 +//
 +// NewRateLimitMiddleware 创建基于 Redis 的限流中间件
-+// 对所有学生服务操作应用限流，按操作名称提取限流键
++// 学生 CRUD 操作与 gRPC 传输共用一份限流额度
 +func NewRateLimitMiddleware(dataData *data.Data, logger *slog.Logger) middleware.Middleware {
 +	routeScope := authkratos.NewInclude( // Create INCLUDE mode route scope // 创建 INCLUDE 模式的路由范围
 +		pb.OperationStudentServiceCreateStudent,
@@ -213,8 +217,10 @@ Code differences compared to source project.
 +		// 使用固定的演示键进行限流演示，生产环境应从上下文提取用户 ID 或 IP
 +		return "demo-rate-limit-key", true
 +	}
-+	cfg := ratekratoslimits.NewConfig(routeScope, dataData.RateLimiter(), &redisLimit, keyFromCtx).
-+		WithDebugMode(true) // Enable debug mode to log rate limit process // 启用调试模式记录限流过程
++	cfg := ratekratoslimits.NewConfig(routeScope, dataData.RateLimiter(), redisLimit, keyFromCtx).
++		WithExceedErk(func(ctx context.Context) *errors.Error {
++			return errors.New(429, "TOO_MANY_REQUESTS", "slow down")
++		})
 +	return ratekratoslimits.NewMiddleware(cfg, logger)
  }
 ```

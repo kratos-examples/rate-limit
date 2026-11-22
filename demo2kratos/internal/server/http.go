@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/go-kratos/kratos/v3/errors"
 	"github.com/go-kratos/kratos/v3/middleware"
 	"github.com/go-kratos/kratos/v3/middleware/recovery"
 	"github.com/go-kratos/kratos/v3/middleware/validate"
@@ -49,10 +50,10 @@ func NewHTTPServer(
 }
 
 // NewRateLimitMiddleware creates rate limiting middleware using Redis-backed limiter
-// Applies rate limit to all article service operations with per-operation key extraction
+// Article CRUD operations share one quota with gRPC; ListStudentArticles is outside the scope
 //
 // NewRateLimitMiddleware 创建基于 Redis 的限流中间件
-// 对所有文章服务操作应用限流，按操作名称提取限流键
+// 文章 CRUD 操作与 gRPC 共用一份额度；ListStudentArticles 不在限流范围内
 func NewRateLimitMiddleware(dataData *data.Data, logger *slog.Logger) middleware.Middleware {
 	routeScope := authkratos.NewInclude( // Create INCLUDE mode route scope // 创建 INCLUDE 模式的路由范围
 		pb.OperationArticleServiceCreateArticle,
@@ -72,7 +73,9 @@ func NewRateLimitMiddleware(dataData *data.Data, logger *slog.Logger) middleware
 		// 使用固定的演示键进行限流演示，生产环境应从上下文提取用户 ID 或 IP
 		return "demo-rate-limit-key", true
 	}
-	cfg := ratekratoslimits.NewConfig(routeScope, dataData.RateLimiter(), &redisLimit, keyFromCtx).
-		WithDebugMode(true) // Enable debug mode to log rate limit process // 启用调试模式记录限流过程
+	cfg := ratekratoslimits.NewConfig(routeScope, dataData.RateLimiter(), redisLimit, keyFromCtx).
+		WithExceedErk(func(ctx context.Context) *errors.Error {
+			return errors.New(429, "TOO_MANY_REQUESTS", "slow down")
+		})
 	return ratekratoslimits.NewMiddleware(cfg, logger)
 }

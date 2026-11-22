@@ -23,6 +23,41 @@ Demo projects built with the Go-Kratos framework.
 
 <!-- TEMPLATE (EN) CLOSE: LANGUAGE NAVIGATION -->
 
+## Rate limit demo
+
+This fork demonstrates [kratos-rate-limit](https://github.com/yylego/kratos-rate-limit) v0.0.3. Each service uses its own in-memory miniredis. Within a service, the five CRUD operations share the fixed key `demo-rate-limit-key` across HTTP and gRPC: a burst of 20 requests, replenished at 10 requests per minute (one every 6 seconds). This is a shared demo quota, not a quota per user or per route. `ListStudentArticles` is outside the scope. Restarting a service resets its quota; separate processes do not share this miniredis instance. Use a shared Redis and context-derived keys when adapting this to distributed or per-user limits.
+
+The middleware takes `redis_rate.Limit` by value and uses `WithExceedErk` to return `429 TOO_MANY_REQUESTS` with message `slow down`. The library supplies the `Retry-After` response header in seconds. Debug output follows the slog level. See [changes/demo1.md](changes/demo1.md) and [changes/demo2.md](changes/demo2.md) for the wiring.
+
+With PostgreSQL configured in `configs/config.yaml`, run each command in its own terminal from the repository root:
+
+```bash
+cd demo1kratos && make all && make build && ./bin/demo1kratos -conf ./configs/config.yaml
+```
+
+```bash
+cd demo2kratos && make all && make build && ./bin/demo2kratos -conf ./configs/config.yaml
+```
+
+On freshly started services with no other traffic, run this burst for each endpoint:
+
+```bash
+for endpoint in 'http://localhost:8001/students?page=1&page_size=1' 'http://localhost:8002/articles?page=1&page_size=1'; do
+  for n in $(seq 1 21); do
+    curl -s -o /dev/null -w '%{http_code}\n' "$endpoint"
+  done
+  curl -i "$endpoint"
+done
+```
+
+The first 20 requests return 200; the next returns 429. The final response includes `Retry-After: 6` when the burst finishes within one second. Wait the number of seconds in the most recent header, then retry the same endpoint: it returns 200. While demo2 is throttled, its excluded route still responds:
+
+```bash
+curl -i 'http://localhost:8002/students/1/articles?page=1&page_size=1'
+```
+
+This returns 200 with the matching articles, or an empty list. Redis failures use the library's default 503 response.
+
 ## Notes to AI Assistants
 
 > If you are an AI coding assistant, read this whole section and understand it before doing anything.

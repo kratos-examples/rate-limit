@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/go-kratos/kratos/v3/errors"
 	"github.com/go-kratos/kratos/v3/middleware"
 	"github.com/go-kratos/kratos/v3/middleware/recovery"
 	"github.com/go-kratos/kratos/v3/middleware/validate"
@@ -64,7 +65,9 @@ func NewGRPCRateLimitMiddleware(dataData *data.Data, logger *slog.Logger) middle
 	keyFromCtx := func(ctx context.Context) (string, bool) {
 		return "demo-rate-limit-key", true
 	}
-	cfg := ratekratoslimits.NewConfig(routeScope, dataData.RateLimiter(), &redisLimit, keyFromCtx).
-		WithDebugMode(true)
+	cfg := ratekratoslimits.NewConfig(routeScope, dataData.RateLimiter(), redisLimit, keyFromCtx).
+		WithExceedErk(func(ctx context.Context) *errors.Error {
+			return errors.New(429, "TOO_MANY_REQUESTS", "slow down")
+		})
 	return ratekratoslimits.NewMiddleware(cfg, logger)
 }

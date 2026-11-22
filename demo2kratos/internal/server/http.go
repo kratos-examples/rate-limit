@@ -10,6 +10,7 @@ import (
 
 	"github.com/go-kratos/kratos/v3/middleware"
 	"github.com/go-kratos/kratos/v3/middleware/recovery"
+	"github.com/go-kratos/kratos/v3/middleware/validate"
 	"github.com/go-kratos/kratos/v3/transport/http"
 	"github.com/go-redis/redis_rate/v10"
 	"github.com/yylego/kratos-auth/authkratos"
@@ -30,6 +31,7 @@ func NewHTTPServer(
 		http.Middleware(
 			recovery.Recovery(),
 			NewRateLimitMiddleware(dataData, logger), // Redis-backed rate limiting // 基于 Redis 的限流中间件
+			validate.Validator(validateRequiredFields),
 		),
 	}
 	if c.Http.Network != "" {

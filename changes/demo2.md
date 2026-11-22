@@ -5,7 +5,7 @@ Code differences compared to source project.
 ## cmd/demo2kratos/wire_gen.go (+2 -2)
 
 ```diff
-@@ -34,8 +34,8 @@
+@@ -30,8 +30,8 @@
  		return nil, nil, err
  	}
  	articleService := service.NewArticleService(articleUsecase)
@@ -18,7 +18,7 @@ Code differences compared to source project.
  		cleanup()
 ```
 
-## internal/data/data.go (+21 -5)
+## internal/data/data.go (+21 -2)
 
 ```diff
 @@ -3,7 +3,10 @@
@@ -32,7 +32,7 @@ Code differences compared to source project.
  	"github.com/yylego/kratos-examples/demo2kratos/internal/conf"
  	"github.com/yylego/must"
  	"github.com/yylego/rese"
-@@ -14,22 +17,35 @@
+@@ -14,7 +17,8 @@
  var ProviderSet = wire.NewSet(NewData)
  
  type Data struct {
@@ -41,10 +41,8 @@ Code differences compared to source project.
 +	rateLimiter *redis_rate.Limiter
  }
  
--// DB exposes the underlying gorm handle so the biz code can run true queries.
--//
--// DB 暴露底层 gorm 句柄，供 biz 层执行真实的数据库读写
- func (d *Data) DB() *gorm.DB {
+ // DB exposes the underlying gorm handle so the biz code can run true queries.
+@@ -24,12 +28,27 @@
  	return d.db
  }
  
@@ -78,7 +76,7 @@ Code differences compared to source project.
 ## internal/server/grpc.go (+38 -1)
 
 ```diff
-@@ -1,19 +1,32 @@
+@@ -1,20 +1,33 @@
  package server
  
  import (
@@ -88,6 +86,7 @@ Code differences compared to source project.
  
 +	"github.com/go-kratos/kratos/v3/middleware"
  	"github.com/go-kratos/kratos/v3/middleware/recovery"
+ 	"github.com/go-kratos/kratos/v3/middleware/validate"
  	"github.com/go-kratos/kratos/v3/transport/grpc"
 +	"github.com/go-redis/redis_rate/v10"
 +	"github.com/yylego/kratos-auth/authkratos"
@@ -109,10 +108,10 @@ Code differences compared to source project.
  		grpc.Middleware(
  			recovery.Recovery(),
 +			NewGRPCRateLimitMiddleware(dataData, logger), // Redis-backed rate limiting // 基于 Redis 的限流中间件
+ 			validate.Validator(validateRequiredFields),
  		),
  	}
- 	if c.Grpc.Network != "" {
-@@ -28,4 +41,28 @@
+@@ -30,4 +43,28 @@
  	srv := grpc.NewServer(opts...)
  	pb.RegisterArticleServiceServer(srv, article)
  	return srv
@@ -146,7 +145,7 @@ Code differences compared to source project.
 ## internal/server/http.go (+46 -1)
 
 ```diff
-@@ -1,19 +1,35 @@
+@@ -1,20 +1,36 @@
 +// Package server provides HTTP and gRPC with Redis-backed rate limiting middleware
 +//
 +// Package server 提供带 Redis 限流中间件的 HTTP 和 gRPC 服务
@@ -159,6 +158,7 @@ Code differences compared to source project.
  
 +	"github.com/go-kratos/kratos/v3/middleware"
  	"github.com/go-kratos/kratos/v3/middleware/recovery"
+ 	"github.com/go-kratos/kratos/v3/middleware/validate"
  	"github.com/go-kratos/kratos/v3/transport/http"
 +	"github.com/go-redis/redis_rate/v10"
 +	"github.com/yylego/kratos-auth/authkratos"
@@ -180,10 +180,10 @@ Code differences compared to source project.
  		http.Middleware(
  			recovery.Recovery(),
 +			NewRateLimitMiddleware(dataData, logger), // Redis-backed rate limiting // 基于 Redis 的限流中间件
+ 			validate.Validator(validateRequiredFields),
  		),
  	}
- 	if c.Http.Network != "" {
-@@ -28,4 +44,33 @@
+@@ -30,4 +46,33 @@
  	srv := http.NewServer(opts...)
  	pb.RegisterArticleServiceHTTPServer(srv, article)
  	return srv

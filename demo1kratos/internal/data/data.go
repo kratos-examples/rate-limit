@@ -21,6 +21,9 @@ type Data struct {
 	rateLimiter *redis_rate.Limiter
 }
 
+// DB exposes the underlying gorm handle so the biz code can run true queries.
+//
+// DB 暴露底层 gorm 句柄，供 biz 层执行真实的数据库读写
 func (d *Data) DB() *gorm.DB {
 	return d.db
 }

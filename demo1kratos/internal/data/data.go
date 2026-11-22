@@ -10,7 +10,7 @@ import (
 	"github.com/yylego/kratos-examples/demo1kratos/internal/conf"
 	"github.com/yylego/must"
 	"github.com/yylego/rese"
-	"gorm.io/driver/sqlite"
+	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
@@ -30,8 +30,8 @@ func (d *Data) RateLimiter() *redis_rate.Limiter {
 }
 
 func NewData(c *conf.Data, logger *slog.Logger) (*Data, func(), error) {
-	must.Same(c.Database.Driver, "sqlite3")
-	db := rese.P1(gorm.Open(sqlite.Open(c.Database.Source), &gorm.Config{}))
+	must.Same(c.Database.Driver, "postgres")
+	db := rese.P1(gorm.Open(postgres.Open(c.Database.Source), &gorm.Config{}))
 
 	// Use miniredis as in-memory Redis for rate limiting demo
 	// 使用 miniredis 作为内存 Redis 用于限流演示

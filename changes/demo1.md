@@ -18,10 +18,10 @@ Code differences compared to source project.
  		cleanup()
 ```
 
-## internal/data/data.go (+24 -8)
+## internal/data/data.go (+21 -5)
 
 ```diff
-@@ -3,33 +3,49 @@
+@@ -3,7 +3,10 @@
  import (
  	"log/slog"
  
@@ -32,11 +32,7 @@ Code differences compared to source project.
  	"github.com/yylego/kratos-examples/demo1kratos/internal/conf"
  	"github.com/yylego/must"
  	"github.com/yylego/rese"
--	"gorm.io/driver/postgres"
-+	"gorm.io/driver/sqlite"
- 	"gorm.io/gorm"
- )
- 
+@@ -14,22 +17,35 @@
  var ProviderSet = wire.NewSet(NewData)
  
  type Data struct {
@@ -57,10 +53,8 @@ Code differences compared to source project.
 +}
 +
  func NewData(c *conf.Data, logger *slog.Logger) (*Data, func(), error) {
--	must.Same(c.Database.Driver, "postgres")
--	db := rese.P1(gorm.Open(postgres.Open(c.Database.Source), &gorm.Config{}))
-+	must.Same(c.Database.Driver, "sqlite3")
-+	db := rese.P1(gorm.Open(sqlite.Open(c.Database.Source), &gorm.Config{}))
+ 	must.Same(c.Database.Driver, "postgres")
+ 	db := rese.P1(gorm.Open(postgres.Open(c.Database.Source), &gorm.Config{}))
 +
 +	// Use miniredis as in-memory Redis for rate limiting demo
 +	// 使用 miniredis 作为内存 Redis 用于限流演示
